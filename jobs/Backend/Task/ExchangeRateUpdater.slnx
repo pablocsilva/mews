@@ -1,3 +1,10 @@
 <Solution>
-  <Project Path="ExchangeRateUpdater.csproj" />
+  <Folder Name="/src/">
+    <Project Path="src/Application/Application.csproj" />
+    <Project Path="src/Domain/Domain.csproj" />
+  </Folder>
+  
+  <Folder Name="/tests/">
+    <Project Path="tests/Application.UnitTests/Application.UnitTests.csproj" />
+  </Folder>
 </Solution>
