@@ -1,3 +1,4 @@
+using System.Globalization;
 using ExchangeRateUpdater.Providers.CzechNationalBank.Models;
 
 namespace ExchangeRateUpdater.Providers.CzechNationalBank;
@@ -18,66 +19,104 @@ namespace ExchangeRateUpdater.Providers.CzechNationalBank;
 /// </remarks>
 public class PipeSeparatedResponseParser : IResponseParser
 {
+    private static readonly char[] _newLineCharacters = ['\r', '\n'];
+    private const string _expectedHeaderColumns = "Country|Currency|Amount|Code|Rate";
     public DailyResponse Parse(string rawData)
     {
-        // read header split by #
-        // read column names for validation
-        // read lines split by |
-
         if (string.IsNullOrWhiteSpace(rawData))
         {
             throw new CnbParsingException("Raw data is empty, null or white space.");
         }
 
-        var contents = rawData.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
-        var headerParts = contents[0].Split('#', StringSplitOptions.TrimEntries);
-        if (headerParts.Length != 2)
+        var contents = rawData.Split(_newLineCharacters, StringSplitOptions.RemoveEmptyEntries);
+        if (contents.Length < 3)
         {
-            throw new CnbParsingException("Header is not in expected format.");
+            throw new CnbParsingException("Response does not contain enough lines.");
         }
 
-        var columnNames = contents[1];
-        if (columnNames != "Country|Currency|Amount|Code|Rate")
+        var header = contents[0];
+        var headerParts = GetHeaderParts(header);
+        var exchangeDate = GetExchangeDate(headerParts);
+        var exchangeSequence = GetExchangeSequence(headerParts);
+
+        ValidateColumnNames(contents[1]);
+
+        return new DailyResponse
+        (
+            Date: exchangeDate,
+            Sequence: exchangeSequence,
+            Records: contents[2..]
+                .Select(ParseRecord)
+                .ToArray()
+        );
+    }
+    private static DailyRecord ParseRecord(string line)
+    {
+        var parts = line.Split('|', StringSplitOptions.TrimEntries);
+
+        if (parts.Length != 5)
         {
-            throw new CnbParsingException("Column names are not in expected format.");
+            throw new CnbParsingException($"Invalid record format: '{line}'");
         }
 
-        if (!DateOnly.TryParse(headerParts[0], out var date))
+        if (!int.TryParse(parts[2], out var amount))
         {
-            throw new CnbParsingException("Header date is not in expected format.");
+            throw new CnbParsingException($"Invalid amount: '{parts[2]}'");
         }
 
+        if (!decimal.TryParse(parts[4], NumberStyles.Number, CultureInfo.InvariantCulture, out var rate))
+        {
+            throw new CnbParsingException($"Invalid rate: '{parts[4]}'");
+        }
+
+        return new DailyRecord(
+            Country: parts[0],
+            CurrencyName: parts[1],
+            Amount: amount,
+            Code: parts[3],
+            Rate: rate
+        );
+    }
+    private static int GetExchangeSequence(string[] headerParts)
+    {
         if (!int.TryParse(headerParts[1], out var sequence))
         {
             throw new CnbParsingException("Header sequence is not in expected format.");
         }
 
-        return new DailyResponse
-        (
-            Date: date,
-            Sequence: sequence,
-            Records: contents[2..]
-                .Select(line =>
-                    {
-                        var parts = line.Split('|', StringSplitOptions.TrimEntries);
-                        return new DailyRecord(
-                            Country: parts[0],
-                            CurrencyName: parts[1],
-                            Amount: int.Parse(parts[2]),
-                            Code: parts[3],
-                            Rate: decimal.Parse(parts[4])
-                        );
-                    }
-                ).ToArray()
-        );
+        return sequence;
     }
-}
 
-
-public class CnbParsingException : Exception
-{
-    public CnbParsingException(string message)
-        : base(message)
+    private static DateOnly GetExchangeDate(string[] headerParts)
     {
+        if (!DateOnly.TryParse(headerParts[0], CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        {
+            throw new CnbParsingException("Header date is not in expected format.");
+        }
+
+        return date;
+    }
+
+    private static string[] GetHeaderParts(string header)
+    {
+        var headerParts = header.Split('#', StringSplitOptions.TrimEntries);
+
+        if (headerParts.Length != 2)
+        {
+            throw new CnbParsingException("Header is not in expected format.");
+        }
+
+        return headerParts;
+    }
+
+    private static void ValidateColumnNames(string columnNames)
+    {
+        if (!string.Equals(columnNames.Trim(), _expectedHeaderColumns, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new CnbParsingException("Column names are not in expected format.");
+        }
     }
 }
+
+
+public class CnbParsingException(string message) : Exception(message) { }

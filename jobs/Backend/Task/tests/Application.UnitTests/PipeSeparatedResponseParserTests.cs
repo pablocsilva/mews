@@ -8,7 +8,7 @@ public class PipeSeparatedResponseParserTests
     private readonly DateOnly _testDate = new(2025, 12, 23);
     private const int _testSequence = 248;
     private const string _validHeader = "23 Dec 2025 #248";
-    private const string _validColumns = "Country|Currency|Amount|Code|Rate";
+    private const string _validColumnNames = "Country|Currency|Amount|Code|Rate";
 
     private static string RawData(params string[] parts)
         => string.Join(Environment.NewLine, parts);
@@ -16,9 +16,7 @@ public class PipeSeparatedResponseParserTests
     [Fact]
     public void Parse_ShouldThrowCnbParsingException_WhenRawDataIsNull()
     {
-        var exception = Assert.Throws<CnbParsingException>(() => _sut.Parse(null));
-
-        Assert.Equal("Raw data is empty, null or white space.", exception.Message);
+        AssertThrowsWithMessage(() => _sut.Parse(null), "Raw data is empty, null or white space.");
     }
 
     [Theory]
@@ -27,47 +25,108 @@ public class PipeSeparatedResponseParserTests
     [InlineData("\t")] // Tab character
     [InlineData("\n")] // Newline character
     [InlineData("\r\n")] // Carriage return and newline
-    public void Parse_ShouldThrowCnbParsingException_WhenRawDataIsWhitespace(string input)
+    public void Parse_ShouldThrowCnbParsingException_WhenRawDataIsEmptyOrWhitespace(string input)
     {
-        var exception = Assert.Throws<CnbParsingException>(() => _sut.Parse(input));
-
-        Assert.Equal("Raw data is empty, null or white space.", exception.Message);
+        AssertThrowsWithMessage(() => _sut.Parse(input), "Raw data is empty, null or white space.");
     }
 
     [Theory]
-    [InlineData("Anything without hash symbol")] // No hash symbol
-    [InlineData("Multiple##hash##symbols")] // More than one hash symbol
-    [InlineData("##StartsWithHash")] // Hash at the beginning
+    [InlineData("invalidheader\n anything \n anything")] // No hash symbolon header
+    [InlineData("Multiple##hash##symbols\n anything \n anything")] // More than one hash symbol
+    [InlineData("##StartsWithHash\n anything \n anything")] // Hash at the beginning
     public void Parse_ShouldThrowCnbParsingException_WhenHeaderIsInvalid(string input)
     {
-        var exception = Assert.Throws<CnbParsingException>(() => _sut.Parse(input));
+        AssertThrowsWithMessage(() => _sut.Parse(input), "Header is not in expected format.");
+    }
 
-        Assert.Equal("Header is not in expected format.", exception.Message);
+
+    public static IEnumerable<object[]> GetInvalidColumnFormats()
+    {
+        // Wrong column names
+        yield return new object[] { RawData(_validHeader, "WrongColumn1|WrongColumn2|WrongColumn3|WrongColumn4|WrongColumn5", "anything") };
+        // Comma separator instead of pipe
+        yield return new object[] { RawData(_validHeader, "Country,Currency,Amount,Code,Rate", "anything") };
+        // Too many columns
+        yield return new object[] { RawData(_validHeader, "Country|Currency|Amount|Code|Rate|ExtraColumn", "anything") };
+        // Too few columns
+        yield return new object[] { RawData(_validHeader, "Country|Currency|Amount", "anything") };
+        // Missing Rate column
+        yield return new object[] { RawData(_validHeader, "Country|Currency|Amount|Code", "anything") };
     }
 
     [Theory]
     [MemberData(nameof(GetInvalidColumnFormats))]
     public void Parse_ShouldThrowCnbParsingException_WhenColumnNamesAreInvalid(string input)
     {
-        var exception = Assert.Throws<CnbParsingException>(() => _sut.Parse(input));
-
-        Assert.Equal("Column names are not in expected format.", exception.Message);
+        AssertThrowsWithMessage(() => _sut.Parse(input), "Column names are not in expected format.");
     }
 
-    public static IEnumerable<object[]> GetInvalidColumnFormats()
+    [Fact]
+    public void Parse_ShouldThrowCnbParsingException_WhenRecordIsMalformed()
     {
-        // Wrong column names
-        yield return new object[] { RawData(_validHeader, "WrongColumn1|WrongColumn2|WrongColumn3|WrongColumn4|WrongColumn5") };
-        // Comma separator instead of pipe
-        yield return new object[] { RawData(_validHeader, "Country,Currency,Amount,Code,Rate") };
-        // Too many columns
-        yield return new object[] { RawData(_validHeader, "Country|Currency|Amount|Code|Rate|ExtraColumn") };
-        // Too few columns
-        yield return new object[] { RawData(_validHeader, "Country|Currency|Amount") };
-        // Missing Rate column
-        yield return new object[] { RawData(_validHeader, "Country|Currency|Amount|Code") };
-        // Lowercase column names
-        yield return new object[] { RawData(_validHeader, "country|currency|amount|code|rate") };
+        var malformedData = RawData(
+            _validHeader,
+            _validColumnNames,
+            "||" // missing columns
+        );
+
+        AssertThrowsWithMessage(() => _sut.Parse(malformedData), "Invalid record format");
+    }
+
+    [Fact]
+    public void Parse_ShouldThrow_WhenAmountIsNotNumeric()
+    {
+        var data = RawData(
+            _validHeader,
+            _validColumnNames,
+            "Australia|dollar|X|AUD|13.818"
+        );
+
+        AssertThrowsWithMessage(() => _sut.Parse(data), "Invalid amount");
+    }
+
+    [Fact]
+    public void Parse_ShouldThrow_WhenRateIsNotNumeric()
+    {
+        var data = RawData(
+            _validHeader,
+            _validColumnNames,
+            "Australia|dollar|1|AUD|abc"
+        );
+
+        AssertThrowsWithMessage(() => _sut.Parse(data), "Invalid rate");
+    }
+
+    [Fact]
+    public void Parse_ShouldThrow_WhenHeaderDateIsInvalid()
+    {
+        var data = RawData(
+            "99 Dec 99999 #248", // wrong format
+            _validColumnNames,
+            "Australia|dollar|1|AUD|13.818"
+        );
+
+        AssertThrowsWithMessage(() => _sut.Parse(data), "Header date is not in expected format.");
+    }
+
+    [Fact]
+    public void Parse_ShouldThrow_WhenHeaderSequenceIsInvalid()
+    {
+        var data = RawData(
+            "23 Dec 2025 #ABC",
+            _validColumnNames,
+            "Australia|dollar|1|AUD|13.818"
+        );
+
+        AssertThrowsWithMessage(() => _sut.Parse(data), "Header sequence is not in expected format.");
+    }
+
+    [Fact]
+    public void Parse_ShouldThrow_WhenNoRecordsAreProvided()
+    {
+        var data = RawData(_validHeader, _validColumnNames);
+
+        AssertThrowsWithMessage(() => _sut.Parse(data), "Response does not contain enough lines.");
     }
 
     [Fact]
@@ -75,7 +134,7 @@ public class PipeSeparatedResponseParserTests
     {
         var validData = RawData(
             _validHeader,
-            _validColumns,
+            _validColumnNames,
             "Australia|dollar|1|AUD|13.818",
             "Brazil|real|1|BRL|3.694",
             "Canada|dollar|1|CAD|15.064"
@@ -89,48 +148,40 @@ public class PipeSeparatedResponseParserTests
 
         Assert.Equal(3, actual.Records.Count);
 
-        var firstRecord = actual.Records[0];
-        Assert.Equal("Australia", firstRecord.Country);
-        Assert.Equal("dollar", firstRecord.CurrencyName);
-        Assert.Equal(1, firstRecord.Amount);
-        Assert.Equal("AUD", firstRecord.Code);
-        Assert.Equal(13.818m, firstRecord.Rate);
-
-        var secondRecord = actual.Records[1];
-        Assert.Equal("Brazil", secondRecord.Country);
-        Assert.Equal("real", secondRecord.CurrencyName);
-        Assert.Equal(1, secondRecord.Amount);
-        Assert.Equal("BRL", secondRecord.Code);
-        Assert.Equal(3.694m, secondRecord.Rate);
-
-        var thirdRecord = actual.Records[2];
-        Assert.Equal("Canada", thirdRecord.Country);
-        Assert.Equal("dollar", thirdRecord.CurrencyName);
-        Assert.Equal(1, thirdRecord.Amount);
-        Assert.Equal("CAD", thirdRecord.Code);
-        Assert.Equal(15.064m, thirdRecord.Rate);
+        Assert.Collection(actual.Records,
+            record =>
+            {
+                Assert.Equal("Australia", record.Country);
+                Assert.Equal("dollar", record.CurrencyName);
+                Assert.Equal(1, record.Amount);
+                Assert.Equal("AUD", record.Code);
+                Assert.Equal(13.818m, record.Rate);
+            },
+            record =>
+            {
+                Assert.Equal("Brazil", record.Country);
+                Assert.Equal("real", record.CurrencyName);
+                Assert.Equal(1, record.Amount);
+                Assert.Equal("BRL", record.Code);
+                Assert.Equal(3.694m, record.Rate);
+            },
+            record =>
+            {
+                Assert.Equal("Canada", record.Country);
+                Assert.Equal("dollar", record.CurrencyName);
+                Assert.Equal(1, record.Amount);
+                Assert.Equal("CAD", record.Code);
+                Assert.Equal(15.064m, record.Rate);
+            }
+        );
     }
-
-    [Fact]
-    public void Parse_ShouldReturnEmptyCollection_WhenOnlyHeaderAndColumnsProvided()
-    {
-        var dataWithoutRates = RawData(_validHeader, _validColumns);
-
-        var actual = _sut.Parse(dataWithoutRates);
-
-        Assert.NotNull(actual);
-        Assert.Equal(_testDate, actual.Date);
-        Assert.Equal(_testSequence, actual.Sequence);
-        Assert.Empty(actual.Records);
-    }
-
 
     [Fact]
     public void Parse_ShouldIgnoreExtraWhitespace_WhenDataHasTrailingNewlines()
     {
         var dataWithExtraWhitespace = RawData(
             _validHeader,
-            _validColumns,
+            _validColumnNames,
             "Australia|dollar|1|AUD|13.818",
             "",
             ""
@@ -142,5 +193,11 @@ public class PipeSeparatedResponseParserTests
         Assert.Equal(_testDate, actual.Date);
         Assert.Equal(_testSequence, actual.Sequence);
         Assert.Single(actual.Records);
+    }
+
+    private static void AssertThrowsWithMessage(Action act, string expectedMessage)
+    {
+        var ex = Assert.Throws<CnbParsingException>(act);
+        Assert.Contains(expectedMessage, ex.Message);
     }
 }
