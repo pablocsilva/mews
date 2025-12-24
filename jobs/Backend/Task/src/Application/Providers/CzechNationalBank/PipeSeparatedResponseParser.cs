@@ -28,11 +28,7 @@ public class PipeSeparatedResponseParser : IResponseParser
             throw new CnbParsingException("Raw data is empty, null or white space.");
         }
 
-        var contents = rawData.Split(_newLineCharacters, StringSplitOptions.RemoveEmptyEntries);
-        if (contents.Length < 3)
-        {
-            throw new CnbParsingException("Response does not contain enough lines.");
-        }
+        var contents = GetContents(rawData);
 
         var header = contents[0];
         var headerParts = GetHeaderParts(header);
@@ -50,23 +46,37 @@ public class PipeSeparatedResponseParser : IResponseParser
                 .ToArray()
         );
     }
+
+    private static string[] GetContents(string rawData)
+    {
+        var contents = rawData.Split(_newLineCharacters, StringSplitOptions.RemoveEmptyEntries);
+        if (contents.Length < 3)
+        {
+            throw new CnbParsingException($"Response does not contain enough lines. Lines found: {contents.Length}.");
+        }
+
+        return contents;
+    }
+
     private static DailyRecord ParseRecord(string line)
     {
         var parts = line.Split('|', StringSplitOptions.TrimEntries);
 
         if (parts.Length != 5)
         {
-            throw new CnbParsingException($"Invalid record format: '{line}'");
+            throw new CnbParsingException($"Invalid record format: '{line}'. Expected 5 pipe-separated columns.");
         }
 
-        if (!int.TryParse(parts[2], out var amount))
+        var amountPart = parts[2];
+        if (!int.TryParse(amountPart, out var amount))
         {
-            throw new CnbParsingException($"Invalid amount: '{parts[2]}'");
+            throw new CnbParsingException($"Invalid amount: '{amountPart}'");
         }
 
-        if (!decimal.TryParse(parts[4], NumberStyles.Number, CultureInfo.InvariantCulture, out var rate))
+        var ratePart = parts[4];
+        if (!decimal.TryParse(ratePart, NumberStyles.Number, CultureInfo.InvariantCulture, out var rate))
         {
-            throw new CnbParsingException($"Invalid rate: '{parts[4]}'");
+            throw new CnbParsingException($"Invalid rate: '{ratePart}'");
         }
 
         return new DailyRecord(
@@ -77,24 +87,27 @@ public class PipeSeparatedResponseParser : IResponseParser
             Rate: rate
         );
     }
-    private static int GetExchangeSequence(string[] headerParts)
-    {
-        if (!int.TryParse(headerParts[1], out var sequence))
-        {
-            throw new CnbParsingException("Header sequence is not in expected format.");
-        }
-
-        return sequence;
-    }
 
     private static DateOnly GetExchangeDate(string[] headerParts)
     {
-        if (!DateOnly.TryParse(headerParts[0], CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
+        var value = headerParts[0];
+        if (!DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
-            throw new CnbParsingException("Header date is not in expected format.");
+            throw new CnbParsingException($"Header date is not in expected format. Value: '{value}'.");
         }
 
         return date;
+    }
+
+    private static int GetExchangeSequence(string[] headerParts)
+    {
+        var value = headerParts[1];
+        if (!int.TryParse(value, out var sequence))
+        {
+            throw new CnbParsingException($"Header sequence is not in expected format. Value: '{value}'.");
+        }
+
+        return sequence;
     }
 
     private static string[] GetHeaderParts(string header)
@@ -103,7 +116,7 @@ public class PipeSeparatedResponseParser : IResponseParser
 
         if (headerParts.Length != 2)
         {
-            throw new CnbParsingException("Header is not in expected format.");
+            throw new CnbParsingException($"Header is not in expected format. Header value: '{header}'.");
         }
 
         return headerParts;
@@ -113,7 +126,7 @@ public class PipeSeparatedResponseParser : IResponseParser
     {
         if (!string.Equals(columnNames.Trim(), _expectedHeaderColumns, StringComparison.OrdinalIgnoreCase))
         {
-            throw new CnbParsingException("Column names are not in expected format.");
+            throw new CnbParsingException($"Column names are not in expected format. Value: '{columnNames}'.");
         }
     }
 }
