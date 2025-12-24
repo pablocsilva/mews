@@ -22,6 +22,38 @@ public class PipeSeparatedResponseParser : IResponseParser
 {
     public DailyResponse Parse(string rawData)
     {
-        throw new NotImplementedException();
+        // read header split by #
+        // read column names for validation
+        // read lines split by |
+
+        if (string.IsNullOrWhiteSpace(rawData))
+        {
+            throw new CnbParsingException("Raw data is empty, null or white space.");
+        }
+
+        var contents = rawData.Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries);
+        var headerParts = contents[0].Split('#', StringSplitOptions.TrimEntries);
+        if (headerParts.Length != 2)
+        {
+            throw new CnbParsingException("Header is not in expected format.");
+        }
+
+        var columnNames = contents[1];
+        if (columnNames != "Country|Currency|Amount|Code|Rate")
+        {
+            throw new CnbParsingException("Column names are not in expected format.");
+        }
+
+
+        return null;
+    }
+}
+
+
+public class CnbParsingException : Exception
+{
+    public CnbParsingException(string message)
+        : base(message)
+    {
     }
 }
