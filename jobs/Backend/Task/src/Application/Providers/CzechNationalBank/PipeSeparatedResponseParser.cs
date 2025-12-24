@@ -1,5 +1,3 @@
-
-using System;
 using ExchangeRateUpdater.Providers.CzechNationalBank.Models;
 
 namespace ExchangeRateUpdater.Providers.CzechNationalBank;
@@ -44,8 +42,34 @@ public class PipeSeparatedResponseParser : IResponseParser
             throw new CnbParsingException("Column names are not in expected format.");
         }
 
+        if (!DateOnly.TryParse(headerParts[0], out var date))
+        {
+            throw new CnbParsingException("Header date is not in expected format.");
+        }
 
-        return null;
+        if (!int.TryParse(headerParts[1], out var sequence))
+        {
+            throw new CnbParsingException("Header sequence is not in expected format.");
+        }
+
+        return new DailyResponse
+        (
+            Date: date,
+            Sequence: sequence,
+            Records: contents[2..]
+                .Select(line =>
+                    {
+                        var parts = line.Split('|', StringSplitOptions.TrimEntries);
+                        return new DailyRecord(
+                            Country: parts[0],
+                            CurrencyName: parts[1],
+                            Amount: int.Parse(parts[2]),
+                            Code: parts[3],
+                            Rate: decimal.Parse(parts[4])
+                        );
+                    }
+                ).ToArray()
+        );
     }
 }
 
