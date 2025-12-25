@@ -29,4 +29,23 @@ public class CurrencyTests
         var currency = new Currency("usd");
         Assert.Equal("USD", currency.Code);
     }
+
+    [Fact]
+    public void TwoCurrencies_WithSameCode_ShouldBeEqual()
+    {
+        var currency1 = new Currency("USD");
+        var currency2 = new Currency("USD");
+
+        Assert.Equal(currency1, currency2);
+        Assert.True(currency1 == currency2);
+    }
+
+    [Fact]
+    public void Currency_ShouldBeCaseInsensitive()
+    {
+        var currency1 = new Currency("USD");
+        var currency2 = new Currency("usd");
+
+        Assert.Equal(currency1, currency2);
+    }
 }
