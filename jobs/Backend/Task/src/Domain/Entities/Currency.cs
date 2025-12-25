@@ -3,7 +3,7 @@
 /// <summary>
 /// Represents a currency using its ISO 4217 code.
 /// </summary>
-public class Currency
+public record Currency
 {
     public string Code { get; }
 
