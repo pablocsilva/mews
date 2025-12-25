@@ -19,7 +19,7 @@ internal sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeR
 {
     private static readonly char[] _newLineCharacters = ['\r', '\n'];
     private const int _expectedColumnCount = 5;
-    private const int _minimumLineCount = 3; // Header + Column names + at least one record
+    private const int _minimumLineCount = 3;
     private const int _expectedHeaderPartsCount = 2;
     private const string _expectedHeaderColumns = "Country|Currency|Amount|Code|Rate";
     public DailyExchangeRatesResponse Parse(string rawData)

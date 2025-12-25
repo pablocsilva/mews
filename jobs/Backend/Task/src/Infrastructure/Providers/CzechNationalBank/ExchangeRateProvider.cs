@@ -36,9 +36,11 @@ internal class ExchangeRateProvider : IExchangeRateProvider
         CancellationToken cancellationToken = default)
     {
         var currencyList = currencies.ToList();
-        _logger.LogInformation("Fetching exchange rates for {Count} currencies: {Currencies}",
+        _logger.LogInformation(
+            "Fetching exchange rates for {Count} currencies: {Currencies}",
             currencyList.Count,
-            string.Join(", ", currencyList.Select(c => c.Code)));
+            string.Join(", ", currencyList.Select(c => c.Code))
+        );
 
         try
         {
@@ -56,8 +58,11 @@ internal class ExchangeRateProvider : IExchangeRateProvider
                 .Select(DomainExchangeRate)
                 .ToList();
 
-            _logger.LogInformation("Successfully retrieved {Count} exchange rates out of {Requested} requested",
-                exchangeRates.Count, currencyList.Count);
+            _logger.LogInformation(
+                "Successfully retrieved {Count} exchange rates out of {Requested} requested",
+                exchangeRates.Count,
+                currencyList.Count
+            );
 
             LogNotFoundCurrencies(currencyList, exchangeRates);
 
@@ -89,7 +94,8 @@ internal class ExchangeRateProvider : IExchangeRateProvider
 
         if (missingCurrencies.Any())
         {
-            _logger.LogWarning("Could not find exchange rates for currencies: {Currencies}",
+            _logger.LogWarning(
+                "Could not find exchange rates for currencies: {Currencies}",
                 string.Join(", ", missingCurrencies)
             );
         }
