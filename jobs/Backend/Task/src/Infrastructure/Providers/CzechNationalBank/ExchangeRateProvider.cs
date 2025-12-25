@@ -1,6 +1,7 @@
 using ExchangeRateUpdater.Domain.Entities;
 using ExchangeRateUpdater.Domain.Interfaces;
 using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Clients;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Exceptions;
 using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers;
 using Microsoft.Extensions.Logging;
 
@@ -61,6 +62,11 @@ internal class ExchangeRateProvider : IExchangeRateProvider
             LogNotFoundCurrencies(currencyList, exchangeRates);
 
             return exchangeRates;
+        }
+        catch (CzechNationalBankParsingException ex)
+        {
+            _logger.LogError(ex, "Failed to parse exchange rates from Czech National Bank response");
+            throw;
         }
         catch (Exception ex)
         {
