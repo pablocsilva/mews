@@ -1,4 +1,4 @@
-namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank.Configuration;
+namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Configuration;
 
 /// <summary>
 /// Configuration options for the Czech National Bank exchange rate provider.

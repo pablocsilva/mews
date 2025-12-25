@@ -1,10 +1,11 @@
-﻿using ExchangeRateUpdater.Application.Providers.CzechNationalBank;
+﻿using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Exceptions;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers;
 
 namespace ExchangeRateUpdater.UnitTests;
 
 public class PipeSeparatedResponseParserTests
 {
-    private readonly PipeSeparatedResponseParser _sut = new();
+    private readonly PipeSeparatedDailyExchangeResponseParser _sut = new();
     private readonly DateOnly _testDate = new(2025, 12, 23);
     private const int _testSequence = 248;
     private const string _validHeader = "23 Dec 2025 #248";
@@ -197,7 +198,7 @@ public class PipeSeparatedResponseParserTests
 
     private static void AssertThrowsWithMessage(Action act, string expectedMessage)
     {
-        var ex = Assert.Throws<CnbParsingException>(act);
+        var ex = Assert.Throws<CzechNationalBankParsingException>(act);
         Assert.Contains(expectedMessage, ex.Message);
     }
 }

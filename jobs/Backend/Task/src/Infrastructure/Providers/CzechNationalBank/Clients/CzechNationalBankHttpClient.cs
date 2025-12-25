@@ -1,21 +1,21 @@
-using ExchangeRateUpdater.Application.Providers.CzechNationalBank.Configuration;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Configuration;
 using Microsoft.Extensions.Logging;
 
-namespace Application.Providers.CzechNationalBank.Clients;
+namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Clients;
 
 /// <summary>
 /// HTTP client for fetching Czech National Bank exchange rate data.
 /// </summary>
-public class CNBHttpClient : ICNBClient
+public class CzechNationalBankHttpClient : ICzechNationalBankClient
 {
     private readonly HttpClient _httpClient;
-    private readonly ILogger<CNBHttpClient> _logger;
+    private readonly ILogger<CzechNationalBankHttpClient> _logger;
     private readonly ProviderOptions _options;
 
-    public CNBHttpClient(
+    public CzechNationalBankHttpClient(
         HttpClient httpClient,
         ProviderOptions options,
-        ILogger<CNBHttpClient> logger)
+        ILogger<CzechNationalBankHttpClient> logger)
     {
         _httpClient = httpClient;
         _options = options;

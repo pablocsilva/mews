@@ -7,7 +7,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Domain/Domain.csproj" />
+    <ProjectReference Include="../Domain/ExchangeRateUpdater.Domain.csproj" />
+    <ProjectReference Include="../Infrastructure/Providers/CzechNationalBank/ExchangeRateUpdater.Providers.CzechNationalBank.csproj" />
   </ItemGroup>
 
   <ItemGroup>

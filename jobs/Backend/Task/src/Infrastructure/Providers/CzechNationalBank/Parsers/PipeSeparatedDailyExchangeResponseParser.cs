@@ -1,23 +1,21 @@
 using System.Globalization;
-using ExchangeRateUpdater.Application.Providers.CzechNationalBank.Models;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Exceptions;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Models;
 
-namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank;
+namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers;
 
 /// <summary>
 /// Parses exchange rate data returned by the Czech National Bank daily rates endpoint.
 /// </summary>
 /// <remarks>
-/// Expected format (simplified):
-/// 
+/// Expected format:
+/// <code>
 /// 23 Dec 2025 #248
 /// Country|Currency|Amount|Code|Rate
-// Australia|dollar|1|AUD|13.818
-// Brazil|real|1|BRL|3.694
-/// 
-/// Source:
-/// https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt
+/// Australia|dollar|1|AUD|13.818
+/// </code>
 /// </remarks>
-public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponseParser
+public sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeRatesResponseParser
 {
     private static readonly char[] _newLineCharacters = ['\r', '\n'];
     private const string _expectedHeaderColumns = "Country|Currency|Amount|Code|Rate";
@@ -25,7 +23,7 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
     {
         if (string.IsNullOrWhiteSpace(rawData))
         {
-            throw new CnbParsingException("Raw data is empty, null or white space.");
+            throw new CzechNationalBankParsingException("Raw data is empty, null or white space.");
         }
 
         var contents = GetContents(rawData);
@@ -52,7 +50,7 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
         var contents = rawData.Split(_newLineCharacters, StringSplitOptions.RemoveEmptyEntries);
         if (contents.Length < 3)
         {
-            throw new CnbParsingException($"Response does not contain enough lines. Lines found: {contents.Length}.");
+            throw new CzechNationalBankParsingException($"Response does not contain enough lines. Lines found: {contents.Length}.");
         }
 
         return contents;
@@ -64,7 +62,7 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
 
         if (headerParts.Length != 2)
         {
-            throw new CnbParsingException($"Header is not in expected format. Header value: '{header}'.");
+            throw new CzechNationalBankParsingException($"Header is not in expected format. Header value: '{header}'.");
         }
 
         return headerParts;
@@ -75,7 +73,7 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
         var value = headerParts[0];
         if (!DateOnly.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.None, out var date))
         {
-            throw new CnbParsingException($"Header date is not in expected format. Value: '{value}'.");
+            throw new CzechNationalBankParsingException($"Header date is not in expected format. Value: '{value}'.");
         }
 
         return date;
@@ -86,7 +84,7 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
         var value = headerParts[1];
         if (!int.TryParse(value, out var sequence))
         {
-            throw new CnbParsingException($"Header sequence is not in expected format. Value: '{value}'.");
+            throw new CzechNationalBankParsingException($"Header sequence is not in expected format. Value: '{value}'.");
         }
 
         return sequence;
@@ -96,7 +94,7 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
     {
         if (!string.Equals(columnNames.Trim(), _expectedHeaderColumns, StringComparison.OrdinalIgnoreCase))
         {
-            throw new CnbParsingException($"Column names are not in expected format. Value: '{columnNames}'.");
+            throw new CzechNationalBankParsingException($"Column names are not in expected format. Value: '{columnNames}'.");
         }
     }
 
@@ -106,19 +104,19 @@ public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponsePar
 
         if (parts.Length != 5)
         {
-            throw new CnbParsingException($"Invalid record format: '{line}'. Expected 5 pipe-separated columns.");
+            throw new CzechNationalBankParsingException($"Invalid record format: '{line}'. Expected 5 pipe-separated columns.");
         }
 
         var amountPart = parts[2];
         if (!int.TryParse(amountPart, out var amount))
         {
-            throw new CnbParsingException($"Invalid amount: '{amountPart}'");
+            throw new CzechNationalBankParsingException($"Invalid amount: '{amountPart}'");
         }
 
         var ratePart = parts[4];
         if (!decimal.TryParse(ratePart, NumberStyles.Number, CultureInfo.InvariantCulture, out var rate))
         {
-            throw new CnbParsingException($"Invalid rate: '{ratePart}'");
+            throw new CzechNationalBankParsingException($"Invalid rate: '{ratePart}'");
         }
 
         return new ExchangeRate(

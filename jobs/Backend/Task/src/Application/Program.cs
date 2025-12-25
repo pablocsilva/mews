@@ -1,9 +1,11 @@
-﻿using Application.Providers.CzechNationalBank.Clients;
-using ExchangeRateUpdater.Application.Configuration;
-using ExchangeRateUpdater.Application.Providers.CzechNationalBank;
-using ExchangeRateUpdater.Application.Providers.CzechNationalBank.Configuration;
+﻿using ExchangeRateUpdater.Application.Configuration;
 using ExchangeRateUpdater.Domain;
 using ExchangeRateUpdater.Domain.Entities;
+using ExchangeRateUpdater.Domain.Interfaces;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Clients;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Configuration;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -91,13 +93,13 @@ public static class Program
                     services.AddSingleton(sp => sp.GetRequiredService<IOptions<ProviderOptions>>().Value);
 
                     services
-                        .AddHttpClient<ICNBClient, CNBHttpClient>()
+                        .AddHttpClient<ICzechNationalBankClient, CzechNationalBankHttpClient>()
                         .AddPolicyHandler(PollyPolicies.GetRetryPolicy())
                         .AddPolicyHandler(PollyPolicies.GetCircuitBreakerPolicy())
                         .AddPolicyHandler(PollyPolicies.GetTimeoutPolicy());
 
-                    services.AddSingleton<IDailyExchangeRatesResponseParser, PipeSeparatedResponseParser>();
-                    services.AddScoped<IExchangeRateProvider, CzezhNationalBankExchangeRateProvider>();
+                    services.AddSingleton<IDailyExchangeRatesResponseParser, PipeSeparatedDailyExchangeResponseParser>();
+                    services.AddScoped<IExchangeRateProvider, ExchangeRateProvider>();
                     services.AddTransient<ExchangeRateApp>();
                 }
             );

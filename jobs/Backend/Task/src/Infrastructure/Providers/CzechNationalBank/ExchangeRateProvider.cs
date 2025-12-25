@@ -1,22 +1,29 @@
-using Application.Providers.CzechNationalBank.Clients;
-using ExchangeRateUpdater.Domain;
 using ExchangeRateUpdater.Domain.Entities;
+using ExchangeRateUpdater.Domain.Interfaces;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Clients;
+using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers;
 using Microsoft.Extensions.Logging;
 
-namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank;
+namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
 
-public class CzezhNationalBankExchangeRateProvider : IExchangeRateProvider
+/// <summary>
+/// Exchange rate provider backed by the Czech National Bank daily rates feed.
+/// </summary>
+/// <remarks>
+/// This provider fetches and parses daily exchange rates published by the CNB.
+/// </remarks>
+public class ExchangeRateProvider : IExchangeRateProvider
 {
     private static readonly Currency TargetCurrency = new("CZK");
 
-    private readonly ICNBClient _cnbClient;
+    private readonly ICzechNationalBankClient _cnbClient;
     private readonly IDailyExchangeRatesResponseParser _parser;
-    private readonly ILogger<CzezhNationalBankExchangeRateProvider> _logger;
+    private readonly ILogger<ExchangeRateProvider> _logger;
 
-    public CzezhNationalBankExchangeRateProvider(
-        ICNBClient cnbClient,
+    public ExchangeRateProvider(
+        ICzechNationalBankClient cnbClient,
         IDailyExchangeRatesResponseParser parser,
-        ILogger<CzezhNationalBankExchangeRateProvider> logger)
+        ILogger<ExchangeRateProvider> logger)
     {
         _cnbClient = cnbClient;
         _parser = parser;

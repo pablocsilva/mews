@@ -1,4 +1,4 @@
-namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank.Models;
+namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Models;
 
 /// <summary>
 /// Represents a single exchange rate record from the CNB daily file.

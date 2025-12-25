@@ -1,5 +1,5 @@
-using ExchangeRateUpdater.Domain;
 using ExchangeRateUpdater.Domain.Entities;
+using ExchangeRateUpdater.Domain.Interfaces;
 using Microsoft.Extensions.Logging;
 
 namespace ExchangeRateUpdater.Application;
