@@ -1,4 +1,4 @@
-﻿using ExchangeRateUpdater.Providers.CzechNationalBank;
+﻿using ExchangeRateUpdater.Application.Providers.CzechNationalBank;
 
 namespace ExchangeRateUpdater.UnitTests;
 
@@ -146,32 +146,32 @@ public class PipeSeparatedResponseParserTests
         Assert.Equal(_testDate, actual.Date);
         Assert.Equal(_testSequence, actual.Sequence);
 
-        Assert.Equal(3, actual.Records.Count);
+        Assert.Equal(3, actual.ExchangeRates.Count);
 
-        Assert.Collection(actual.Records,
-            record =>
+        Assert.Collection(actual.ExchangeRates,
+            result =>
             {
-                Assert.Equal("Australia", record.Country);
-                Assert.Equal("dollar", record.CurrencyName);
-                Assert.Equal(1, record.Amount);
-                Assert.Equal("AUD", record.Code);
-                Assert.Equal(13.818m, record.Rate);
+                Assert.Equal("Australia", result.Country);
+                Assert.Equal("dollar", result.CurrencyName);
+                Assert.Equal(1, result.Amount);
+                Assert.Equal("AUD", result.Code);
+                Assert.Equal(13.818m, result.Rate);
             },
-            record =>
+            result =>
             {
-                Assert.Equal("Brazil", record.Country);
-                Assert.Equal("real", record.CurrencyName);
-                Assert.Equal(1, record.Amount);
-                Assert.Equal("BRL", record.Code);
-                Assert.Equal(3.694m, record.Rate);
+                Assert.Equal("Brazil", result.Country);
+                Assert.Equal("real", result.CurrencyName);
+                Assert.Equal(1, result.Amount);
+                Assert.Equal("BRL", result.Code);
+                Assert.Equal(3.694m, result.Rate);
             },
-            record =>
+            result =>
             {
-                Assert.Equal("Canada", record.Country);
-                Assert.Equal("dollar", record.CurrencyName);
-                Assert.Equal(1, record.Amount);
-                Assert.Equal("CAD", record.Code);
-                Assert.Equal(15.064m, record.Rate);
+                Assert.Equal("Canada", result.Country);
+                Assert.Equal("dollar", result.CurrencyName);
+                Assert.Equal(1, result.Amount);
+                Assert.Equal("CAD", result.Code);
+                Assert.Equal(15.064m, result.Rate);
             }
         );
     }
@@ -192,7 +192,7 @@ public class PipeSeparatedResponseParserTests
         Assert.NotNull(actual);
         Assert.Equal(_testDate, actual.Date);
         Assert.Equal(_testSequence, actual.Sequence);
-        Assert.Single(actual.Records);
+        Assert.Single(actual.ExchangeRates);
     }
 
     private static void AssertThrowsWithMessage(Action act, string expectedMessage)

@@ -1,18 +1,42 @@
-using System;
-
-namespace ExchangeRateUpdater.Providers.CzechNationalBank.Configuration;
+namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank.Configuration;
 
 /// <summary>
 /// Configuration options for the Czech National Bank exchange rate provider.
 /// </summary>
-public class ProviderOptions
+public record ProviderOptions
 {
-    public const string SectionName = "CnbProvider";
-    public string BaseUrl { get; set; } = "https://www.cnb.cz";
-    public string DailyRatesPath { get; set; } = "/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt";
+    public static string ConfigurationSectionName => "CnbProvider";
+    public string BaseUrl { get; set; } = string.Empty;
+    public string DailyRatesPath { get; set; } = string.Empty;
     public int TimeoutSeconds { get; set; } = 10;
     public int RetryCount { get; set; } = 3;
-    public string UserAgent { get; set; } = "ExchangeRateUpdater/1.0";
+    public string UserAgent { get; set; } = string.Empty;
 
-    public string FullUrl => $"{BaseUrl.TrimEnd('/')}{DailyRatesPath}";
+    public void Validate()
+    {
+        if (string.IsNullOrWhiteSpace(BaseUrl))
+        {
+            throw new InvalidOperationException("BaseUrl is required");
+        }
+
+        if (!Uri.TryCreate(BaseUrl, UriKind.Absolute, out _))
+        {
+            throw new InvalidOperationException("BaseUrl must be a valid URL");
+        }
+
+        if (string.IsNullOrWhiteSpace(DailyRatesPath))
+        {
+            throw new InvalidOperationException($"{nameof(DailyRatesPath)} is required");
+        }
+
+        if (TimeoutSeconds <= 0)
+        {
+            throw new InvalidOperationException($"{nameof(TimeoutSeconds)} must be positive");
+        }
+
+        if (RetryCount < 0)
+        {
+            throw new InvalidOperationException($"{nameof(RetryCount)} cannot be negative");
+        }
+    }
 }

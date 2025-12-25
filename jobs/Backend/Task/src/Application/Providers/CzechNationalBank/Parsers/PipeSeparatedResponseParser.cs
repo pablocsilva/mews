@@ -1,7 +1,7 @@
 using System.Globalization;
-using ExchangeRateUpdater.Providers.CzechNationalBank.Models;
+using ExchangeRateUpdater.Application.Providers.CzechNationalBank.Models;
 
-namespace ExchangeRateUpdater.Providers.CzechNationalBank;
+namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank;
 
 /// <summary>
 /// Parses exchange rate data returned by the Czech National Bank daily rates endpoint.
@@ -17,11 +17,11 @@ namespace ExchangeRateUpdater.Providers.CzechNationalBank;
 /// Source:
 /// https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt
 /// </remarks>
-public class PipeSeparatedResponseParser : IResponseParser
+public sealed class PipeSeparatedResponseParser : IDailyExchangeRatesResponseParser
 {
     private static readonly char[] _newLineCharacters = ['\r', '\n'];
     private const string _expectedHeaderColumns = "Country|Currency|Amount|Code|Rate";
-    public DailyResponse Parse(string rawData)
+    public DailyExchangeRatesResponse Parse(string rawData)
     {
         if (string.IsNullOrWhiteSpace(rawData))
         {
@@ -37,11 +37,11 @@ public class PipeSeparatedResponseParser : IResponseParser
 
         ValidateColumnNames(contents[1]);
 
-        return new DailyResponse
+        return new DailyExchangeRatesResponse
         (
             Date: exchangeDate,
             Sequence: exchangeSequence,
-            Records: contents[2..]
+            ExchangeRates: contents[2..]
                 .Select(ParseRecord)
                 .ToArray()
         );
@@ -58,34 +58,16 @@ public class PipeSeparatedResponseParser : IResponseParser
         return contents;
     }
 
-    private static DailyRecord ParseRecord(string line)
+    private static string[] GetHeaderParts(string header)
     {
-        var parts = line.Split('|', StringSplitOptions.TrimEntries);
+        var headerParts = header.Split('#', StringSplitOptions.TrimEntries);
 
-        if (parts.Length != 5)
+        if (headerParts.Length != 2)
         {
-            throw new CnbParsingException($"Invalid record format: '{line}'. Expected 5 pipe-separated columns.");
+            throw new CnbParsingException($"Header is not in expected format. Header value: '{header}'.");
         }
 
-        var amountPart = parts[2];
-        if (!int.TryParse(amountPart, out var amount))
-        {
-            throw new CnbParsingException($"Invalid amount: '{amountPart}'");
-        }
-
-        var ratePart = parts[4];
-        if (!decimal.TryParse(ratePart, NumberStyles.Number, CultureInfo.InvariantCulture, out var rate))
-        {
-            throw new CnbParsingException($"Invalid rate: '{ratePart}'");
-        }
-
-        return new DailyRecord(
-            Country: parts[0],
-            CurrencyName: parts[1],
-            Amount: amount,
-            Code: parts[3],
-            Rate: rate
-        );
+        return headerParts;
     }
 
     private static DateOnly GetExchangeDate(string[] headerParts)
@@ -110,18 +92,6 @@ public class PipeSeparatedResponseParser : IResponseParser
         return sequence;
     }
 
-    private static string[] GetHeaderParts(string header)
-    {
-        var headerParts = header.Split('#', StringSplitOptions.TrimEntries);
-
-        if (headerParts.Length != 2)
-        {
-            throw new CnbParsingException($"Header is not in expected format. Header value: '{header}'.");
-        }
-
-        return headerParts;
-    }
-
     private static void ValidateColumnNames(string columnNames)
     {
         if (!string.Equals(columnNames.Trim(), _expectedHeaderColumns, StringComparison.OrdinalIgnoreCase))
@@ -129,7 +99,34 @@ public class PipeSeparatedResponseParser : IResponseParser
             throw new CnbParsingException($"Column names are not in expected format. Value: '{columnNames}'.");
         }
     }
+
+    private static ExchangeRate ParseRecord(string line)
+    {
+        var parts = line.Split('|', StringSplitOptions.TrimEntries);
+
+        if (parts.Length != 5)
+        {
+            throw new CnbParsingException($"Invalid record format: '{line}'. Expected 5 pipe-separated columns.");
+        }
+
+        var amountPart = parts[2];
+        if (!int.TryParse(amountPart, out var amount))
+        {
+            throw new CnbParsingException($"Invalid amount: '{amountPart}'");
+        }
+
+        var ratePart = parts[4];
+        if (!decimal.TryParse(ratePart, NumberStyles.Number, CultureInfo.InvariantCulture, out var rate))
+        {
+            throw new CnbParsingException($"Invalid rate: '{ratePart}'");
+        }
+
+        return new ExchangeRate(
+            Country: parts[0],
+            CurrencyName: parts[1],
+            Amount: amount,
+            Code: parts[3],
+            Rate: rate
+        );
+    }
 }
-
-
-public class CnbParsingException(string message) : Exception(message) { }

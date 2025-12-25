@@ -1,40 +1,105 @@
-﻿using ExchangeRateUpdater.Domain;
+﻿using Application.Providers.CzechNationalBank.Clients;
+using ExchangeRateUpdater.Application.Configuration;
+using ExchangeRateUpdater.Application.Providers.CzechNationalBank;
+using ExchangeRateUpdater.Application.Providers.CzechNationalBank.Configuration;
+using ExchangeRateUpdater.Domain;
+using ExchangeRateUpdater.Domain.Entities;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Serilog;
 
-namespace ExchangeRateUpdater;
+namespace ExchangeRateUpdater.Application;
 
 public static class Program
 {
-    private static IEnumerable<Currency> currencies = new[]
-    {
-            new Currency("USD"),
-            new Currency("EUR"),
-            new Currency("CZK"),
-            new Currency("JPY"),
-            new Currency("KES"),
-            new Currency("RUB"),
-            new Currency("THB"),
-            new Currency("TRY"),
-            new Currency("XYZ")
-        };
+    private static IEnumerable<Currency> _currencies =
+    [
+        new Currency("USD"),
+        new Currency("EUR"),
+        new Currency("CZK"),
+        new Currency("JPY"),
+        new Currency("KES"),
+        new Currency("RUB"),
+        new Currency("THB"),
+        new Currency("TRY"),
+        new Currency("XYZ")
+    ];
 
-    public static void Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
+        ConfigureLogging();
+
         try
         {
-            var provider = new ExchangeRateProvider();
-            var rates = provider.GetExchangeRates(currencies);
+            Log.Information("Starting Exchange Rate Updater Application");
 
-            Console.WriteLine($"Successfully retrieved {rates.Count()} exchange rates:");
-            foreach (var rate in rates)
-            {
-                Console.WriteLine(rate.ToString());
-            }
+            var host = CreateHostBuilder(args).Build();
+
+            using var scope = host.Services.CreateScope();
+            var app = scope.ServiceProvider.GetRequiredService<ExchangeRateApp>();
+            await app.RunAsync(_currencies);
+
+            return 0;
         }
-        catch (Exception e)
+        catch (Exception ex)
         {
-            Console.WriteLine($"Could not retrieve exchange rates: '{e.Message}'.");
+            Log.Fatal(ex, "Application terminated unexpectedly");
+            Console.WriteLine($"Could not retrieve exchange rates: '{ex.Message}'.");
+            return 1;
         }
-
-        Console.ReadLine();
+        finally
+        {
+            Log.CloseAndFlush();
+        }
     }
+
+    private static void ConfigureLogging()
+    {
+        Log.Logger = new LoggerConfiguration()
+            .MinimumLevel.Information()
+            .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+            .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+            .Enrich.FromLogContext()
+            .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}")
+            .CreateLogger();
+    }
+
+    private static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .UseSerilog()
+            .UseDefaultServiceProvider(options =>
+                {
+                    options.ValidateScopes = true;
+                    options.ValidateOnBuild = true;
+                }
+            )
+            .ConfigureServices((context, services) =>
+                {
+                    services
+                        .AddOptions<ProviderOptions>()
+                        .Bind(context.Configuration.GetSection(ProviderOptions.ConfigurationSectionName))
+                        .Validate(opts =>
+                            {
+                                opts.Validate();
+                                return true;
+                            }
+                        );
+
+                    services.Configure<ProviderOptions>(context.Configuration.GetSection("CnbProvider"));
+
+                    services.AddSingleton(sp => sp.GetRequiredService<IOptions<ProviderOptions>>().Value);
+
+                    services
+                        .AddHttpClient<ICNBClient, CNBHttpClient>()
+                        .AddPolicyHandler(PollyPolicies.GetRetryPolicy())
+                        .AddPolicyHandler(PollyPolicies.GetCircuitBreakerPolicy())
+                        .AddPolicyHandler(PollyPolicies.GetTimeoutPolicy());
+
+                    services.AddSingleton<IDailyExchangeRatesResponseParser, PipeSeparatedResponseParser>();
+                    services.AddScoped<IExchangeRateProvider, CzezhNationalBankExchangeRateProvider>();
+                    services.AddTransient<ExchangeRateApp>();
+                }
+            );
+
 }

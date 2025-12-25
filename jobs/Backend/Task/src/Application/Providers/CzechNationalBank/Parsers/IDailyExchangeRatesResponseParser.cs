@@ -1,11 +1,11 @@
-namespace ExchangeRateUpdater.Providers.CzechNationalBank;
+using ExchangeRateUpdater.Application.Providers.CzechNationalBank.Models;
 
-using ExchangeRateUpdater.Providers.CzechNationalBank.Models;
+namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank;
 
 /// <summary>
 /// Defines a contract for parsing CNB exchange rate data.
 /// </summary>
-public interface IResponseParser
+public interface IDailyExchangeRatesResponseParser
 {
     /// <summary>
     /// Parses raw CNB data into structured format.
@@ -13,5 +13,5 @@ public interface IResponseParser
     /// <param name="rawData">Raw text data from CNB.</param>
     /// <returns>Parsed exchange rate data.</returns>
     /// <exception cref="CnbParsingException">Thrown when data cannot be parsed.</exception>
-    DailyResponse Parse(string rawData);
+    DailyExchangeRatesResponse Parse(string rawData);
 }
