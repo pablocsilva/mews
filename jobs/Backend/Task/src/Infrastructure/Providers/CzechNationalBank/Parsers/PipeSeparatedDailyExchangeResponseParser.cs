@@ -18,6 +18,9 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers
 internal sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeRatesResponseParser
 {
     private static readonly char[] _newLineCharacters = ['\r', '\n'];
+    private const int _expectedColumnCount = 5;
+    private const int _minimumLineCount = 3; // Header + Column names + at least one record
+    private const int _expectedHeaderPartsCount = 2;
     private const string _expectedHeaderColumns = "Country|Currency|Amount|Code|Rate";
     public DailyExchangeRatesResponse Parse(string rawData)
     {
@@ -48,7 +51,7 @@ internal sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeR
     private static string[] GetContents(string rawData)
     {
         var contents = rawData.Split(_newLineCharacters, StringSplitOptions.RemoveEmptyEntries);
-        if (contents.Length < 3)
+        if (contents.Length < _minimumLineCount)
         {
             throw new CzechNationalBankParsingException($"Response does not contain enough lines. Lines found: {contents.Length}.");
         }
@@ -60,7 +63,7 @@ internal sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeR
     {
         var headerParts = header.Split('#', StringSplitOptions.TrimEntries);
 
-        if (headerParts.Length != 2)
+        if (headerParts.Length != _expectedHeaderPartsCount)
         {
             throw new CzechNationalBankParsingException($"Header is not in expected format. Header value: '{header}'.");
         }
@@ -102,9 +105,9 @@ internal sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeR
     {
         var parts = line.Split('|', StringSplitOptions.TrimEntries);
 
-        if (parts.Length != 5)
+        if (parts.Length != _expectedColumnCount)
         {
-            throw new CzechNationalBankParsingException($"Invalid record format: '{line}'. Expected 5 pipe-separated columns.");
+            throw new CzechNationalBankParsingException($"Invalid record format: '{line}'. Expected {_expectedColumnCount} pipe-separated columns.");
         }
 
         var amountPart = parts[2];
