@@ -169,5 +169,8 @@ These were accepted trade-offs given the scope of the challenge.
 With additional time, the following enhancements could be made:
 
 - Add integration tests with a mocked HTTP server
+- Implement better Domain Exceptions for proper retries / logging
+- Implement greceful failures for malformed Exchange Rates 
+- Consider adding caching
 - Support additional rate providers via a common abstraction
 - Expose richer observability (metrics, structured logs)
