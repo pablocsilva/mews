@@ -11,7 +11,7 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
 
 public static class Registration
 {
-    public static IHttpClientBuilder UseCzechNationalBankProvider(
+    public static IServiceCollection UseCzechNationalBankProvider(
         this IServiceCollection services,
         HostBuilderContext context)
     {
@@ -31,7 +31,13 @@ public static class Registration
             .AddSingleton<IDailyExchangeRatesResponseParser, PipeSeparatedDailyExchangeResponseParser>()
             .AddScoped<Domain.Interfaces.IExchangeRateProvider, ExchangeRateProvider>();
 
-        return services
-            .AddHttpClient<ICzechNationalBankClient, CzechNationalBankHttpClient>();
+        services
+            .AddSingleton<PollyPolicies>()
+            .AddHttpClient<ICzechNationalBankClient, CzechNationalBankHttpClient>()
+            .AddPolicyHandler((sp, _) => sp.GetRequiredService<PollyPolicies>().RetryPolicy)
+            .AddPolicyHandler((sp, _) => sp.GetRequiredService<PollyPolicies>().CircuitBreakerPolicy)
+            .AddPolicyHandler((sp, _) => sp.GetRequiredService<PollyPolicies>().TimeoutPolicy);
+
+        return services;
     }
 }

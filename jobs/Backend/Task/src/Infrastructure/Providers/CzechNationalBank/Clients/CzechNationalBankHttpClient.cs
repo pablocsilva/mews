@@ -22,6 +22,7 @@ sealed internal class CzechNationalBankHttpClient : ICzechNationalBankClient
         _logger = logger;
 
         _httpClient.BaseAddress = new Uri(_options.BaseUrl);
+        _httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(_options.UserAgent);
     }
 
     public async Task<string> GetDailyRatesAsync(CancellationToken cancellationToken = default)

@@ -9,6 +9,7 @@ internal record ProviderOptions
     public required string BaseUrl { get; set; } = string.Empty;
     public required string DailyRatesPath { get; set; } = string.Empty;
     public required int TimeoutSeconds { get; set; } = 10;
+    public required int DurationOfCircuitBreakSeconds { get; set; } = 30;
     public required int RetryCount { get; set; } = 3;
     public required string UserAgent { get; set; } = string.Empty;
 
@@ -32,6 +33,11 @@ internal record ProviderOptions
         if (TimeoutSeconds <= 0)
         {
             throw new InvalidOperationException($"{nameof(TimeoutSeconds)} must be positive");
+        }
+
+        if (DurationOfCircuitBreakSeconds <= 0)
+        {
+            throw new InvalidOperationException($"{nameof(DurationOfCircuitBreakSeconds)} must be positive");
         }
 
         if (RetryCount < 0)

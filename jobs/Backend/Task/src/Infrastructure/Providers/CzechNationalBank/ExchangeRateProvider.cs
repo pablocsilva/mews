@@ -15,18 +15,18 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
 /// </remarks>
 internal class ExchangeRateProvider : IExchangeRateProvider
 {
-    private static readonly Currency TargetCurrency = new("CZK");
+    private static readonly Currency _targetCurrency = new("CZK");
 
-    private readonly ICzechNationalBankClient _cnbClient;
+    private readonly ICzechNationalBankClient _client;
     private readonly IDailyExchangeRatesResponseParser _parser;
     private readonly ILogger<ExchangeRateProvider> _logger;
 
     public ExchangeRateProvider(
-        ICzechNationalBankClient cnbClient,
+        ICzechNationalBankClient client,
         IDailyExchangeRatesResponseParser parser,
         ILogger<ExchangeRateProvider> logger)
     {
-        _cnbClient = cnbClient;
+        _client = client;
         _parser = parser;
         _logger = logger;
     }
@@ -42,7 +42,7 @@ internal class ExchangeRateProvider : IExchangeRateProvider
 
         try
         {
-            var rawData = await _cnbClient.GetDailyRatesAsync(cancellationToken);
+            var rawData = await _client.GetDailyRatesAsync(cancellationToken);
             var data = _parser.Parse(rawData);
 
             var requestedCodes = new HashSet<string>(
@@ -98,7 +98,7 @@ internal class ExchangeRateProvider : IExchangeRateProvider
     private static ExchangeRate DomainExchangeRate(Models.ExchangeRate model) =>
         new(
             sourceCurrency: new Currency(model.Code),
-            targetCurrency: TargetCurrency,
+            targetCurrency: _targetCurrency,
             value: model.Rate / model.Amount
         );
 }

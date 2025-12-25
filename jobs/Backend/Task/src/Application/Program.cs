@@ -1,5 +1,4 @@
-﻿using ExchangeRateUpdater.Application.Configuration;
-using ExchangeRateUpdater.Domain.Entities;
+﻿using ExchangeRateUpdater.Domain.Entities;
 using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -73,10 +72,7 @@ public static class Program
             .ConfigureServices((context, services) =>
                 {
                     services
-                        .UseCzechNationalBankProvider(context)
-                        .AddPolicyHandler(PollyPolicies.GetRetryPolicy())
-                        .AddPolicyHandler(PollyPolicies.GetCircuitBreakerPolicy())
-                        .AddPolicyHandler(PollyPolicies.GetTimeoutPolicy());
+                        .UseCzechNationalBankProvider(context);
 
                     services.AddTransient<ExchangeRateApp>();
                 }
