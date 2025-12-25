@@ -16,10 +16,10 @@ dotnet restore
 dotnet build
 
 # run unit tests
-dotnet test
+   dotnet test
 
 # run the application
-dotnet run --project src/Application/Application.csproj
+dotnet run --project src/Application/ExchangeRateUpdater.Application.csproj
 ```
 
 <br>
@@ -49,7 +49,7 @@ The solution is expected to:
 ## 2. Assumptions
 The following assumptions were made to keep the solution focused and explicit:
 
-- The CNB response format is stable and follows the structure found in the [sample_data.txt](../src/sample_data.txt)
+- The CNB response format is stable and follows the structure found in the [sample_data.txt](sample_data.txt)
 - All exchange rate values are positive
 - The application aims to display the convertion of 1 unit of given currency. Example: 1 EUR -> CZK
 - The target currency is implicitly CZK, as implied by the [CNB source](https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt)
