@@ -15,7 +15,7 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers
 /// Australia|dollar|1|AUD|13.818
 /// </code>
 /// </remarks>
-public sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeRatesResponseParser
+internal sealed class PipeSeparatedDailyExchangeResponseParser : IDailyExchangeRatesResponseParser
 {
     private static readonly char[] _newLineCharacters = ['\r', '\n'];
     private const string _expectedHeaderColumns = "Country|Currency|Amount|Code|Rate";

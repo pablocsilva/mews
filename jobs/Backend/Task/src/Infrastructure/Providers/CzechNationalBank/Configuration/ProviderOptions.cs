@@ -3,7 +3,7 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Configu
 /// <summary>
 /// Configuration options for the Czech National Bank exchange rate provider.
 /// </summary>
-public record ProviderOptions
+internal record ProviderOptions
 {
     public static string ConfigurationSectionName => "CnbProvider";
     public required string BaseUrl { get; set; } = string.Empty;

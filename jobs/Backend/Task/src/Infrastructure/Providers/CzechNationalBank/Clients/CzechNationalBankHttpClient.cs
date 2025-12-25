@@ -6,7 +6,7 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Clients
 /// <summary>
 /// HTTP client for fetching Czech National Bank exchange rate data.
 /// </summary>
-public class CzechNationalBankHttpClient : ICzechNationalBankClient
+sealed internal class CzechNationalBankHttpClient : ICzechNationalBankClient
 {
     private readonly HttpClient _httpClient;
     private readonly ILogger<CzechNationalBankHttpClient> _logger;

@@ -1,14 +1,8 @@
 ﻿using ExchangeRateUpdater.Application.Configuration;
-using ExchangeRateUpdater.Domain;
 using ExchangeRateUpdater.Domain.Entities;
-using ExchangeRateUpdater.Domain.Interfaces;
 using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
-using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Clients;
-using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Configuration;
-using ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank.Parsers;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Options;
 using Serilog;
 
 namespace ExchangeRateUpdater.Application;
@@ -79,27 +73,11 @@ public static class Program
             .ConfigureServices((context, services) =>
                 {
                     services
-                        .AddOptions<ProviderOptions>()
-                        .Bind(context.Configuration.GetSection(ProviderOptions.ConfigurationSectionName))
-                        .Validate(opts =>
-                            {
-                                opts.Validate();
-                                return true;
-                            }
-                        );
-
-                    services.Configure<ProviderOptions>(context.Configuration.GetSection("CnbProvider"));
-
-                    services.AddSingleton(sp => sp.GetRequiredService<IOptions<ProviderOptions>>().Value);
-
-                    services
-                        .AddHttpClient<ICzechNationalBankClient, CzechNationalBankHttpClient>()
+                        .UseCzechNationalBankProvider(context)
                         .AddPolicyHandler(PollyPolicies.GetRetryPolicy())
                         .AddPolicyHandler(PollyPolicies.GetCircuitBreakerPolicy())
                         .AddPolicyHandler(PollyPolicies.GetTimeoutPolicy());
 
-                    services.AddSingleton<IDailyExchangeRatesResponseParser, PipeSeparatedDailyExchangeResponseParser>();
-                    services.AddScoped<IExchangeRateProvider, ExchangeRateProvider>();
                     services.AddTransient<ExchangeRateApp>();
                 }
             );

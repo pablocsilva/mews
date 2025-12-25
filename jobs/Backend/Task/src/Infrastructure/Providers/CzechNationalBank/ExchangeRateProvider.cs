@@ -12,7 +12,7 @@ namespace ExchangeRateUpdater.Infrastructure.Providers.CzechNationalBank;
 /// <remarks>
 /// This provider fetches and parses daily exchange rates published by the CNB.
 /// </remarks>
-public class ExchangeRateProvider : IExchangeRateProvider
+internal class ExchangeRateProvider : IExchangeRateProvider
 {
     private static readonly Currency TargetCurrency = new("CZK");
 
