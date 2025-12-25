@@ -25,10 +25,7 @@ public static class Registration
                 }
             );
 
-        services.Configure<ProviderOptions>(context.Configuration.GetSection(ProviderOptions.ConfigurationSectionName));
-
         services.AddSingleton(sp => sp.GetRequiredService<IOptions<ProviderOptions>>().Value);
-
 
         services
             .AddSingleton<IDailyExchangeRatesResponseParser, PipeSeparatedDailyExchangeResponseParser>()
