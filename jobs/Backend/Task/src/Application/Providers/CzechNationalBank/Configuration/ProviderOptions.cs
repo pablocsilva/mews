@@ -6,11 +6,11 @@ namespace ExchangeRateUpdater.Application.Providers.CzechNationalBank.Configurat
 public record ProviderOptions
 {
     public static string ConfigurationSectionName => "CnbProvider";
-    public string BaseUrl { get; set; } = string.Empty;
-    public string DailyRatesPath { get; set; } = string.Empty;
-    public int TimeoutSeconds { get; set; } = 10;
-    public int RetryCount { get; set; } = 3;
-    public string UserAgent { get; set; } = string.Empty;
+    public required string BaseUrl { get; set; } = string.Empty;
+    public required string DailyRatesPath { get; set; } = string.Empty;
+    public required int TimeoutSeconds { get; set; } = 10;
+    public required int RetryCount { get; set; } = 3;
+    public required string UserAgent { get; set; } = string.Empty;
 
     public void Validate()
     {

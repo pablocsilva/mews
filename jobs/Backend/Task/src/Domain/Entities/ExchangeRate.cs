@@ -10,19 +10,19 @@ public record ExchangeRate
 
     public ExchangeRate(Currency sourceCurrency, Currency targetCurrency, decimal value)
     {
-        SourceCurrency = sourceCurrency ?? throw new ArgumentNullException(nameof(sourceCurrency));
-        TargetCurrency = targetCurrency ?? throw new ArgumentNullException(nameof(targetCurrency));
-
+        ArgumentNullException.ThrowIfNull(sourceCurrency, nameof(sourceCurrency));
+        ArgumentNullException.ThrowIfNull(targetCurrency, nameof(targetCurrency));
         if (value <= 0)
         {
             throw new ArgumentException("Exchange rate value must be positive", nameof(value));
         }
 
+        SourceCurrency = sourceCurrency;
+        TargetCurrency = targetCurrency;
         Value = value;
     }
 
-    public override string ToString()
-    {
-        return $"{SourceCurrency}/{TargetCurrency} = {Value}";
-    }
+    public override string ToString() =>
+        $"{SourceCurrency}/{TargetCurrency} = {Value}";
+
 }

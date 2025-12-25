@@ -1,5 +1,3 @@
-//https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt
-
 23 Dec 2025 #248
 Country|Currency|Amount|Code|Rate
 Australia|dollar|1|AUD|13.818

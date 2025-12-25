@@ -11,7 +11,7 @@ public class ExchangeRateTests
         var targetCurrency = new Currency("USD");
         var value = 1;
 
-        Assert.Throws<ArgumentException>(() => new ExchangeRate(null, targetCurrency, value));
+        Assert.Throws<ArgumentNullException>(() => new ExchangeRate(null, targetCurrency, value));
     }
 
     [Fact]
@@ -20,7 +20,7 @@ public class ExchangeRateTests
         var sourceCurrency = new Currency("USD");
         var value = 1;
 
-        Assert.Throws<ArgumentException>(() => new ExchangeRate(sourceCurrency, null, value));
+        Assert.Throws<ArgumentNullException>(() => new ExchangeRate(sourceCurrency, null, value));
     }
 
     [Theory]

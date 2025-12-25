@@ -1,6 +1,36 @@
 # Exchange Rate Updater – Notes & Considerations
 
+> **TL;DR**  
+> A clean, immutable, and test-focused solution that fetches and parses daily CNB exchange rates, emphasizing correctness, validation, and separation of concerns
+
+<br>
+
+
+### _How to Run The Application_
+
+```bash
+# restore dependencies
+dotnet restore
+
+# build the solution
+dotnet build
+
+# run unit tests
+dotnet test
+
+# run the application
+dotnet run --project src/Application/Application.csproj
+```
+
+<br>
+<br>
+
+
 ## 1. Problem Statement
+
+_See Challenge Instructions here: [Mews Backend .NET Challenge Instructions](https://github.com/MewsSystems/developers/blob/master/jobs/Backend/DotNet.md)_
+
+
 The goal of this challenge is to fetch daily foreign exchange rates published by the Czech National Bank (CNB), parse the returned data, and expose the rates in a clean, domain-driven model.
 
 The CNB endpoint returns exchange rates as a plain-text, pipe-separated file containing:
@@ -14,22 +44,24 @@ The solution is expected to:
 - Convert the raw data into strongly typed domain objects
 - Handle invalid or unexpected input gracefully
 
----
+<br>
 
 ## 2. Assumptions
 The following assumptions were made to keep the solution focused and explicit:
 
-- The CNB response format is stable and follows the documented structure
+- The CNB response format is stable and follows the structure found in the [sample_data.txt](../src/sample_data.txt)
 - All exchange rate values are positive
-- The target currency is implicitly CZK, as defined by the CNB source
+- The application aims to display the convertion of 1 unit of given currency. Example: 1 EUR -> CZK
+- The target currency is implicitly CZK, as implied by the [CNB source](https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/daily.txt)
 - The full response fits comfortably in memory
 - This is a read-only, batch-style operation (no persistence required)
 
-
----
+<br>
 
 ## 3. Approach
 The solution is structured around a clear separation of concerns:
+
+_It uses IoC and DI to allow new implementations to be added without breaking existing ones_
 
 1. **HTTP Client Layer**
    - Responsible for retrieving raw data from the CNB endpoint
@@ -50,7 +82,7 @@ The solution is structured around a clear separation of concerns:
 
 The design favors clarity and correctness over premature optimization.
 
----
+<br>
 
 ## 4. Design Decisions
 
@@ -72,8 +104,7 @@ The design favors clarity and correctness over premature optimization.
 - HTTP calls are protected using retry and circuit breaker policies
 - Transient failures are handled without leaking infrastructure concerns into the domain
 
-
----
+<br>
 
 ## 5. Immutability & Modeling
 The following modeling strategy was applied:
@@ -89,7 +120,7 @@ The following modeling strategy was applied:
 
 This distinction reflects the difference between *data* and *behavior* in the system.
 
----
+<br>
 
 ## 6. Edge Cases & Error Handling
 The solution explicitly handles:
@@ -105,7 +136,7 @@ When errors occur, the system:
 - Throws domain-specific exceptions with descriptive messages
 - Avoids silently ignoring invalid data
 
----
+<br>
 
 ## 7. Testing Strategy
 The testing approach focuses on correctness and determinism:
@@ -117,22 +148,22 @@ The testing approach focuses on correctness and determinism:
   - Edge cases and error scenarios
 - Tests are isolated, fast, and do not rely on external systems
 
-UnitTests to other Application behavior and Integration tests were intentionally omitted due to scope.
+Unit tests for higher-level application behavior and Integration tests were intentionally omitted due to scope.
 
----
+<br>
 
 ## 8. Limitations
 Known limitations include:
 
 - No caching of results between runs
-- No dinamically parsing program args as currencies input
+- No dynamically parsing program args as currencies input
 - No persistence layer
 - No localization or formatting concerns addressed
 - No retry backoff customization exposed via configuration
 
 These were accepted trade-offs given the scope of the challenge.
 
----
+<br>
 
 ## 9. Possible Improvements
 With additional time, the following enhancements could be made:
@@ -140,21 +171,3 @@ With additional time, the following enhancements could be made:
 - Add integration tests with a mocked HTTP server
 - Support additional rate providers via a common abstraction
 - Expose richer observability (metrics, structured logs)
-
-
----
-
-## 10. How to Run
-
-```bash
-# restore dependencies
-dotnet restore
-
-# build the solution
-dotnet build
-
-# run unit tests
-dotnet test
-
-# run the application
-dotnet run --project src/Application.csproj
