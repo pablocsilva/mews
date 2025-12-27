@@ -9,6 +9,9 @@
 ### _How to Run The Application_
 
 ```bash
+# navigate to src/Application folder
+cd src/Application
+
 # restore dependencies
 dotnet restore
 
@@ -16,10 +19,10 @@ dotnet restore
 dotnet build
 
 # run unit tests
-   dotnet test
+dotnet test
 
 # run the application
-dotnet run --project src/Application/ExchangeRateUpdater.Application.csproj
+dotnet run --project ExchangeRateUpdater.Application.csproj
 ```
 
 <br>
